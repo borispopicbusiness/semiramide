@@ -1,0 +1,153 @@
+services:
+  keycloak-db:
+    container_name: deavensoft-keycloak-db
+    image: postgres:15.1
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: my_admin
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: operations_portal_db
+    networks:
+      - operations-portal-network
+
+  keycloak:
+    container_name: deavensoft-keycloak
+    image: jboss/keycloak:16.1.1
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: keycloak-db
+      DB_DATABASE: operations_portal_db
+      DB_USER: my_admin
+      DB_SCHEMA: public
+      DB_PASSWORD: my_password
+      KEYCLOAK_USER: kc_admin
+      KEYCLOAK_PASSWORD: kc_password
+      KEYCLOAK_IMPORT: /tmp/op_realm_config.json -Dkeycloak.profile.feature.upload_scripts=enabled
+      PROXY_ADDRESS_FORWARDING: true
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - ${KEYCLOAK_PORT:-8080}:8080
+    networks:
+      - operations-portal-network
+    volumes:
+      - /data/deavensoft/docker-volumes/op-keycloak-config/op_realm_config.json:/tmp/op_realm_config.json
+    depends_on:
+      - keycloak-db
+
+  operations-portal-db:
+    container_name: deavensoft-operations-portal-db
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: operationsportal
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - ${DB_PORT:-25432}:5432
+    networks:
+      - operations-portal-network
+
+  operations-portal-db-pgadmin:
+    container_name: deavensoft-operations-portal-db-pgadmin
+    image: dpage/pgadmin4:7.4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: djordje.cvetkovic@deavensoft.com
+      PGADMIN_DEFAULT_PASSWORD: eszy8KqEnofUFd6vkCoo
+    networks:
+      - operations-portal-network
+    ports:
+      - ${PGADMIN_PORT:-26107}:80
+
+  operations-portal-backend:
+    container_name: deavensoft-operations-portal-backend
+    image: deavensoft/operations-portal-backend:${VERSION:-0.1.0}
+    environment:
+      SPRING_ELASTICSEARCH_URL: elasticsearch:9200
+      SPRING_DATASOURCE_URL: jdbc:postgresql://operations-portal-db:5432/operationsportal
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI: https://op-idp.deavensoft.com/auth/realms/operations-portal-realm
+      OP_SECURITY_PROVIDER_KEYCLOAK_USERNAME: kc_admin
+      OP_SECURITY_PROVIDER_KEYCLOAK_PASSWORD: kc_password
+      OP_SECURITY_PROVIDER_KEYCLOAK_HOST: keycloak:8080
+      OP_SECURITY_PROVIDER_KEYCLOAK_DEFAULTADMINUSERNAME: admin
+      OP_SECURITY_PROVIDER_KEYCLOAK_DEFAULTADMINPASSWORD: admin
+      SPRING_MAIL_HOST: mail.guidle.com
+      SPRING_MAIL_PROPERITES_MAIL_SMTP_FROM: deavensoft.op@guidle.com
+    extra_hosts:
+      - "mail.guidle.com:192.168.200.10"
+    networks:
+      - operations-portal-network
+    depends_on:
+      operations-portal-db:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+
+  operations-portal-gateway:
+    container_name: deavensoft-operations-portal-gateway
+    image: deavensoft/operations-portal-gateway:${VERSION:-0.1.0}
+    environment:
+      OP_GATEWAY_BACKENDHOST: operations-portal-backend:8082
+    ports:
+      - "${GATEWAY_PORT:-8083}:8083"
+    networks:
+      - operations-portal-network
+
+  operations-portal-frontend:
+    container_name: deavensoft-operations-portal-frontend
+    image: deavensoft/operations-portal-frontend:${VERSION:-0.1.0}
+    environment:
+      GATEWAY_ADDRESS: https://op-gateway.deavensoft.com
+      KEYCLOAK_ADDRESS: https://op-idp.deavensoft.com
+    ports:
+      - "${OP_PORT:-80}:80"
+
+  elasticsearch:
+    container_name: deavensoft-op-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+    ports:
+      - "${ES_PORT:-9200}:9200"
+    environment:
+      - ELASTIC_PASSWORD=dev
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - es-net
+
+  kibana:
+    container_name: deavensoft-op-kibana
+    image: docker.elastic.co/kibana/kibana:7.6.2
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+      - '${KIBANA_PORT:-5601}:5601'
+    depends_on:
+      - elasticsearch
+    volumes:
+      - kibana-data:/usr/share/kibana/data
+    networks:
+      - es-net
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  kibana-data:
+    driver: local
+
+networks:
+  es-net:
+    driver: bridge
+  operations-portal-network:
+    driver: bridge

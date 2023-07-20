@@ -1,0 +1,97 @@
+services:
+  keycloakdb:
+    image: postgres:15.1
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: my_admin
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: operations_portal_db
+    ports:
+      - 5432:5432
+
+  keycloak:
+    image: jboss/keycloak:16.1.1
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: keycloakdb
+      DB_DATABASE: operations_portal_db
+      DB_USER: my_admin
+      DB_SCHEMA: public
+      DB_PASSWORD: my_password
+      KEYCLOAK_HOSTNAME: backend-keycloak-auth
+      KEYCLOAK_USER: kc_admin
+      KEYCLOAK_PASSWORD: kc_password
+      KEYCLOAK_IMPORT: /tmp/op_realm_config.json -Dkeycloak.profile.feature.upload_scripts=enabled
+    ports:
+      - 8080:8080
+    volumes:
+      - ./op_realm_config.json:/tmp/op_realm_config.json
+    depends_on:
+      - keycloakdb
+
+  postgres:
+    container_name: operationsportaldb
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: operationsportal
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5431:5432"
+    networks:
+      - operationsportal-network
+
+  pgadmin:
+    container_name: pgadmin_op
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@domain.com
+      PGADMIN_DEFAULT_PASSWORD: somepass
+    networks:
+      - operationsportal-network
+    ports:
+      - "5000:80"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+    ports:
+      - "9200:9200"
+    environment:
+      - ELASTIC_PASSWORD=dev
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - es-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.2
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+      - '5601:5601'
+    depends_on:
+      - elasticsearch
+    volumes:
+      - kibana-data:/usr/share/kibana/data
+    networks:
+      - es-net
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  kibana-data:
+    driver: local
+
+networks:
+  es-net:
+    driver: bridge
+  operationsportal-network:
+    driver: bridge

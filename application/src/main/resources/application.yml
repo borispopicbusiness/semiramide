@@ -1,0 +1,73 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /backend_service
+
+spring:
+  mail:
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: 'true'
+          auth: 'false'
+    templates:
+      path: mail-templates/
+    host: localhost
+    username:
+    password:
+    port: 25
+  elasticsearch:
+    url: localhost:9200
+  datasource:
+    url: jdbc:postgresql://localhost:5431/operationsportal
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+  properties:
+    hibernate:
+      default-schema: "public"
+  hibernate:
+    generate-ddl: true
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://backend-keycloak-auth:8080/auth/realms/operations-portal-realm
+logging:
+  level:
+    root: info
+op:
+  base-frontend-url: http://op.deavensoft.com/
+  datasource:
+    host: localhost:5431
+  security:
+    provider:
+      keycloak:
+        host: "localhost:8080"
+        realm: "operations-portal-realm"
+        username: "kc_admin"
+        password: "kc_password"
+        admin-client-name: "admin-cli"
+        frontend-client-name: "op-fe-client"
+        grant-type: "password"
+        get-principal-count-url: "http://${op.security.provider.keycloak.host}/auth/admin/realms/operations-portal-realm/users/count"
+        get-client-id-url: "http://${op.security.provider.keycloak.host}/auth/admin/realms/operations-portal-realm/clients?clientId={client}"
+        get-available-roles-url: "http://${op.security.provider.keycloak.host}/auth/admin/realms/operations-portal-realm/users/{userId}/role-mappings/clients/{clientId}/available"
+        create-principal-url: "http://${op.security.provider.keycloak.host}/auth/admin/realms/operations-portal-realm/users"
+        update-principal-url: "http://${op.security.provider.keycloak.host}/auth/admin/realms/operations-portal-realm/users/{id}"
+        delete-principal-url: "http://${op.security.provider.keycloak.host}/auth/admin/realms/operations-portal-realm/users/{id}"
+        assign-client-role-url: "http://${op.security.provider.keycloak.host}/auth/admin/realms/operations-portal-realm/users/{userId}/role-mappings/clients/{clientId}"
+        authorize-url: "http://${op.security.provider.keycloak.host}/auth/realms/master/protocol/openid-connect/token"
+        default-admin-username: "admin"
+        default-admin-password: "admin"
