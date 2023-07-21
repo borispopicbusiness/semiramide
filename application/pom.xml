@@ -5,13 +5,13 @@
 
     <parent>
         <artifactId>domain</artifactId>
-        <groupId>com.deavensoft.operationsportal</groupId>
+        <groupId>com.semiramide.operationsportal</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.deavensoft.operationsportal.domain</groupId>
+    <groupId>com.semiramide.operationsportal.domain</groupId>
     <artifactId>application</artifactId>
     <packaging>jar</packaging>
 
@@ -37,7 +37,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.deavensoft.operationsportal.domain</groupId>
+            <groupId>com.semiramide.operationsportal.domain</groupId>
             <artifactId>adapters</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
@@ -50,7 +50,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.deavensoft.operationsportal.Backend</mainClass>
+                    <mainClass>com.semiramide.operationsportal.Backend</mainClass>
                     <layout>JAR</layout>
                 </configuration>
                 <executions>

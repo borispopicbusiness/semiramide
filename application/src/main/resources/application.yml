@@ -48,7 +48,7 @@ logging:
   level:
     root: info
 op:
-  base-frontend-url: http://op.deavensoft.com/
+  base-frontend-url: http://op.semiramide.com/
   datasource:
     host: localhost:5431
   security:

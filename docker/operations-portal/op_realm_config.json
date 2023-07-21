@@ -856,17 +856,17 @@
     {
       "id": "76e3892b-f346-4518-9720-897e6dbc9dbe",
       "clientId": "op-fe-client",
-      "rootUrl": "https://op.deavensoft.com",
-      "baseUrl": "https://op.deavensoft.com",
+      "rootUrl": "https://op.semiramide.com",
+      "baseUrl": "https://op.semiramide.com",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "https://op.deavensoft.com/*"
+        "https://op.semiramide.com/*"
       ],
       "webOrigins": [
-        "https://op.deavensoft.com"
+        "https://op.semiramide.com"
       ],
       "notBefore": 0,
       "bearerOnly": false,
